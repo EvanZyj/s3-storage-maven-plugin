@@ -3,7 +3,7 @@
 
   <groupId>com.shinho.maven.plugins</groupId>
   <artifactId>s3-storage-maven-plugin</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0</version>
   <packaging>maven-plugin</packaging>
 
   <name>S3 storage maven plugin</name>
