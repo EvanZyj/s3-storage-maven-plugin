@@ -1,6 +1,6 @@
 s3-storage-maven-plugin
 ======================
-用于上传到S3的maven插件
+用于上传文件到S3的maven插件
 
 配置说明
 ------------------------
@@ -24,7 +24,7 @@ plugin configuration
                     <secretKey>AWS secretKey</secretKey>
                     <bucketName>s3-001-xxx-prd-bjs</bucketName>
                     <source>${basedir}/target/*.jar</source>
-                    <destination>temp/</destination>
+                    <destination>aiodp/</destination>
                 </configuration>
             </execution>
         </executions>
