@@ -1,21 +1,21 @@
 package com.shinho.maven.plugins.s3.upload;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.auth.*;
+import com.amazonaws.event.ProgressEvent;
+import com.amazonaws.event.ProgressListenerChain;
 import com.amazonaws.internal.StaticCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.Headers;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.transfer.ObjectMetadataProvider;
-import com.amazonaws.services.s3.transfer.Transfer;
-import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.*;
 import com.sun.org.apache.bcel.internal.generic.NOP;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -29,6 +29,12 @@ import java.util.regex.Pattern;
 
 @Mojo(name = "s3-storage")
 public class S3StorageMojo extends AbstractMojo {
+    /**
+     * enable是否允许上传下载操作.
+     */
+    @Parameter(property = "s3-storage.enable", defaultValue = "false")
+    private boolean enable;
+
     @Parameter(property = "s3-storage.accessKey")
     private String accessKey;
 
@@ -37,12 +43,6 @@ public class S3StorageMojo extends AbstractMojo {
 
     @Parameter(property = "s3-storage.region")
     private String region;
-
-    /**
-     * enable是否允许上传下载操作.
-     */
-    @Parameter(property = "s3-storage.enable", defaultValue = "false")
-    private boolean enable;
 
     /**
      * The file to upload.
@@ -75,8 +75,10 @@ public class S3StorageMojo extends AbstractMojo {
             getLog().info("s3-storage is disabled.");
             return;
         }
-        AmazonS3 s3 = getS3Client(accessKey, secretKey);
-        s3.setRegion(Region.getRegion(Regions.fromName(region)));
+        AmazonS3 s3 = getS3Client(accessKey, secretKey, region);
+//        if (region != null) {
+//            s3.setRegion(Region.getRegion(Regions.fromName(region)));
+//        }
 
         if (endpoint != null) {
             s3.setEndpoint(endpoint);
@@ -95,46 +97,68 @@ public class S3StorageMojo extends AbstractMojo {
                 source, bucketName, destination));
     }
 
-    private static AmazonS3 getS3Client(String accessKey, String secretKey) {
+    private static AmazonS3 getS3Client(String accessKey, String secretKey, String region) {
         AWSCredentialsProvider provider;
         if (accessKey != null && secretKey != null) {
-            AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
-            provider = new StaticCredentialsProvider(credentials);
+            BasicAWSCredentials awsCreds = new BasicAWSCredentials(accessKey, secretKey);
+            provider = new AWSStaticCredentialsProvider(awsCreds);
         } else {
             provider = new DefaultAWSCredentialsProviderChain();
         }
 
-        return new AmazonS3Client(provider);
+        AmazonS3 s3 = AmazonS3ClientBuilder.standard()
+                .withCredentials(provider)
+                .withRegion(region)
+                .build();
+        return s3;
     }
 
     private boolean upload(AmazonS3 s3, String source) throws MojoExecutionException {
-        TransferManager mgr = new TransferManager(s3);
-
-        Transfer transfer;
         List<File> files = getFiles(source);
-        for(File file : files){
-            if (file.isFile()) {
-                String keyName = destination + "/" + file.getName();
-                keyName = keyName.replaceAll("[\\\\/]+", "/");
 
-                transfer = mgr.upload(new PutObjectRequest(bucketName, keyName, file)
-                        .withCannedAcl(CannedAccessControlList.BucketOwnerFullControl));
+        try {
+            TransferManager mgr = TransferManagerBuilder.standard().withS3Client(s3).build();
+            Transfer transfer;
+            for (File file : files) {
+                if (file.isFile()) {
+                    String keyName = destination + "/" + file.getName();
+                    keyName = keyName.replaceAll("[\\\\/]+", "/");
 
-                try {
-                    getLog().debug("Transferring " + transfer.getProgress().getTotalBytesToTransfer() + " bytes...");
+                    transfer = mgr.upload(new PutObjectRequest(bucketName, keyName, file)
+                            .withCannedAcl(CannedAccessControlList.BucketOwnerFullControl));
+
+                    printProgressBar(0.0);
+                    transfer.addProgressListener(new ProgressListenerChain() {
+                        public void progressChanged(ProgressEvent e) {
+                            double pct = e.getBytesTransferred() * 100.0 / e.getBytes();
+                            eraseProgressBar();
+                            printProgressBar(pct);
+                        }
+                    });
                     transfer.waitForCompletion();
-                    getLog().info("Transferred " + transfer.getProgress().getBytesTransferred() + " bytes.");
-                } catch (InterruptedException e) {
-                    getLog().info(String.format("File %s File transfer failed.",
-                            file.getName()));
-                    return false;
-                }
-                if(transfer.getState() != Transfer.TransferState.Completed){
-                    getLog().info(String.format("File %s File transfer failed.",
-                            file.getName()));
-                    return false;
+                    eraseProgressBar();
+                    printProgressBar(transfer.getProgress().getPercentTransferred());
+                    getLog().info(String.format("%s transferred %s bytes.",
+                            file.getName(), transfer.getProgress().getBytesTransferred()));
+                    if (transfer.getState() != Transfer.TransferState.Completed) {
+                        getLog().info(String.format("File %s File transfer failed.",
+                                file.getName()));
+                        return false;
+                    }
                 }
             }
+        } catch (AmazonServiceException e) {
+            e.printStackTrace();
+            getLog().error("Amazon service error: " + e.getMessage());
+            return false;
+        } catch (AmazonClientException e) {
+            e.printStackTrace();
+            getLog().error("Amazon client error: " + e.getMessage());
+            return false;
+        } catch (InterruptedException e) {
+            getLog().info(String.format("File %s File transfer failed.",
+                    source));
+            return false;
         }
 
         return true;
@@ -209,5 +233,23 @@ public class S3StorageMojo extends AbstractMojo {
             }
         }
         return sb.toString();
+    }
+
+    public static void printProgressBar(double pct) {
+        // if bar_size changes, then change erase_bar (in eraseProgressBar) to
+        // match.
+        final int bar_size = 40;
+        final String empty_bar = "                                        ";
+        final String filled_bar = "########################################";
+        int amt_full = (int) (bar_size * (pct / 100.0));
+        System.out.format("  [%s%s]", filled_bar.substring(0, amt_full),
+                empty_bar.substring(0, bar_size - amt_full));
+    }
+
+    // erases the progress bar.
+    public static void eraseProgressBar() {
+        // erase_bar is bar_size (from printProgressBar) + 4 chars.
+        final String erase_bar = "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
+        System.out.format(erase_bar);
     }
 }
