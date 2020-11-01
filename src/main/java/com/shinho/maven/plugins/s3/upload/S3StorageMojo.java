@@ -5,27 +5,18 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.*;
 import com.amazonaws.event.ProgressEvent;
 import com.amazonaws.event.ProgressListenerChain;
-import com.amazonaws.internal.StaticCredentialsProvider;
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.Headers;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.transfer.*;
-import com.sun.org.apache.bcel.internal.generic.NOP;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 @Mojo(name = "s3-storage")
 public class S3StorageMojo extends AbstractMojo {
@@ -41,7 +32,7 @@ public class S3StorageMojo extends AbstractMojo {
     @Parameter(property = "s3-storage.secretKey")
     private String secretKey;
 
-    @Parameter(property = "s3-storage.region")
+    @Parameter(property = "s3-storage.region", required = true)
     private String region;
 
     /**
@@ -76,9 +67,6 @@ public class S3StorageMojo extends AbstractMojo {
             return;
         }
         AmazonS3 s3 = getS3Client(accessKey, secretKey, region);
-//        if (region != null) {
-//            s3.setRegion(Region.getRegion(Regions.fromName(region)));
-//        }
 
         if (endpoint != null) {
             s3.setEndpoint(endpoint);
@@ -106,16 +94,16 @@ public class S3StorageMojo extends AbstractMojo {
             provider = new DefaultAWSCredentialsProviderChain();
         }
 
-        AmazonS3 s3 = AmazonS3ClientBuilder.standard()
+        return AmazonS3ClientBuilder.standard()
                 .withCredentials(provider)
                 .withRegion(region)
                 .build();
-        return s3;
     }
 
-    private boolean upload(AmazonS3 s3, String source) throws MojoExecutionException {
-        List<File> files = getFiles(source);
+    private boolean upload(AmazonS3 s3, String source) {
 
+        FilePatternResolver fpr = new FilePatternResolver(source);
+        List<File> files = fpr.files();
         try {
             TransferManager mgr = TransferManagerBuilder.standard().withS3Client(s3).build();
             Transfer transfer;
@@ -127,17 +115,17 @@ public class S3StorageMojo extends AbstractMojo {
                     transfer = mgr.upload(new PutObjectRequest(bucketName, keyName, file)
                             .withCannedAcl(CannedAccessControlList.BucketOwnerFullControl));
 
-                    printProgressBar(0.0);
+                    ProgressBar.printProgressBar(0.0);
                     transfer.addProgressListener(new ProgressListenerChain() {
                         public void progressChanged(ProgressEvent e) {
                             double pct = e.getBytesTransferred() * 100.0 / e.getBytes();
-                            eraseProgressBar();
-                            printProgressBar(pct);
+                            ProgressBar.eraseProgressBar();
+                            ProgressBar.printProgressBar(pct);
                         }
                     });
                     transfer.waitForCompletion();
-                    eraseProgressBar();
-                    printProgressBar(transfer.getProgress().getPercentTransferred());
+                    ProgressBar.eraseProgressBar();
+                    ProgressBar.printProgressBar(transfer.getProgress().getPercentTransferred());
                     getLog().info(String.format("%s transferred %s bytes.",
                             file.getName(), transfer.getProgress().getBytesTransferred()));
                     if (transfer.getState() != Transfer.TransferState.Completed) {
@@ -148,11 +136,9 @@ public class S3StorageMojo extends AbstractMojo {
                 }
             }
         } catch (AmazonServiceException e) {
-            e.printStackTrace();
             getLog().error("Amazon service error: " + e.getMessage());
             return false;
         } catch (AmazonClientException e) {
-            e.printStackTrace();
             getLog().error("Amazon client error: " + e.getMessage());
             return false;
         } catch (InterruptedException e) {
@@ -164,92 +150,4 @@ public class S3StorageMojo extends AbstractMojo {
         return true;
     }
 
-    private static List<File> getFiles(String source){
-        source = source.replaceAll("[\\\\|/]+", "/");
-        String pathReg = getRegPath(source);
-        ArrayList<File> files = new ArrayList<File>();
-        int lidx = source.lastIndexOf("/");
-        String sourceDir = source.substring(0,lidx);
-
-        File dir = new File(sourceDir);
-        if (!dir.exists()) {
-            return files;
-        }
-
-        for (File f : dir.listFiles()) {
-            if (f.isFile()
-                    && Pattern.matches(pathReg, f.getAbsolutePath())) {
-                files.add(f);
-            }
-            /**
-            else {
-                getFiles(f.getAbsolutePath());
-            }
-             */
-        }
-        return files;
-    }
-
-    /**
-     * 将通配符表达式转化为正则表达式
-     *
-     * @param path
-     * @return
-     */
-    private static String getRegPath(String path) {
-        char[] chars = path.toCharArray();
-        int len = chars.length;
-        StringBuilder sb = new StringBuilder();
-        boolean preX = false;
-
-        for (int i = 0; i < len; i++) {
-            if (chars[i] == '*') {
-                if (preX) {
-                    sb.append(".*");
-                    preX = false;
-                } else if (i + 1 == len) {
-                    sb.append("[^/\\\\]*");
-                } else {
-                    preX = true;
-                    continue;
-                }
-            } else {
-                if (preX) {
-                    sb.append("[^/\\\\]*");
-                    preX = false;
-                }
-                if (chars[i] == '?') {
-                    sb.append('.');
-                }else if(chars[i] == '.'){
-                    sb.append("\\.");
-                }else if(chars[i] == '\\'){
-                    sb.append("/");
-                }else if(chars[i] == '/'){
-                    sb.append("[\\\\|/]+");
-                }
-                else {
-                    sb.append(chars[i]);
-                }
-            }
-        }
-        return sb.toString();
-    }
-
-    public static void printProgressBar(double pct) {
-        // if bar_size changes, then change erase_bar (in eraseProgressBar) to
-        // match.
-        final int bar_size = 40;
-        final String empty_bar = "                                        ";
-        final String filled_bar = "########################################";
-        int amt_full = (int) (bar_size * (pct / 100.0));
-        System.out.format("  [%s%s]", filled_bar.substring(0, amt_full),
-                empty_bar.substring(0, bar_size - amt_full));
-    }
-
-    // erases the progress bar.
-    public static void eraseProgressBar() {
-        // erase_bar is bar_size (from printProgressBar) + 4 chars.
-        final String erase_bar = "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b";
-        System.out.format(erase_bar);
-    }
 }

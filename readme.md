@@ -8,7 +8,7 @@ plugin configuration
 ----------------------
 ```xml
     <plugin>
-        <groupId>com.github.EvanZyj</groupId>
+        <groupId>com.github.evanzyj</groupId>
         <artifactId>s3-storage-maven-plugin</artifactId>
         <version>1.0-SNAPSHOT</version>
         <executions>
@@ -22,8 +22,9 @@ plugin configuration
                     <enable>true</enable> 
                     <accessKey>AWS accessKey</accessKey>
                     <secretKey>AWS secretKey</secretKey>
-                    <bucketName>s3-001-xxx-prd-bjs</bucketName>
-                    <source>${basedir}/target/*.jar</source>
+                    <region>cn-north-1</region>
+                    <bucketName>s3-001-aio-prd-bjs</bucketName>
+                    <source>${basedir}/target/dailysalary-*.jar</source>
                     <destination>aiodp/</destination>
                 </configuration>
             </execution>
