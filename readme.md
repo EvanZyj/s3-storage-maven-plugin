@@ -22,6 +22,7 @@ plugin configuration
                     <enable>true</enable> 
                     <accessKey>AWS accessKey</accessKey>
                     <secretKey>AWS secretKey</secretKey>
+                    <region>cn-north-1</region>
                     <bucketName>s3-001-xxx-prd-bjs</bucketName>
                     <source>${basedir}/target/*.jar</source>
                     <destination>aiodp/</destination>
