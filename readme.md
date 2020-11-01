@@ -10,7 +10,7 @@ plugin configuration
     <plugin>
         <groupId>com.github.evanzyj</groupId>
         <artifactId>s3-storage-maven-plugin</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0.3</version>
         <executions>
             <execution>
                 <phase>package</phase>
