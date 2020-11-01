@@ -114,20 +114,27 @@ public class S3StorageMojo extends AbstractMojo {
 
                     transfer = mgr.upload(new PutObjectRequest(bucketName, keyName, file)
                             .withCannedAcl(CannedAccessControlList.BucketOwnerFullControl));
-
+                    getLog().info(String.format("Transferring %s.", file.getName()));
                     ProgressBar.printProgressBar(0.0);
-                    transfer.addProgressListener(new ProgressListenerChain() {
-                        public void progressChanged(ProgressEvent e) {
-                            double pct = e.getBytesTransferred() * 100.0 / e.getBytes();
-                            ProgressBar.eraseProgressBar();
-                            ProgressBar.printProgressBar(pct);
+                    do {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            break;
                         }
-                    });
+
+                        TransferProgress progress = transfer.getProgress();
+                        double pct = progress.getPercentTransferred();
+                        ProgressBar.eraseProgressBar();
+                        ProgressBar.printProgressBar(pct);
+                    } while (!transfer.isDone());
+
                     transfer.waitForCompletion();
                     ProgressBar.eraseProgressBar();
                     ProgressBar.printProgressBar(transfer.getProgress().getPercentTransferred());
-                    getLog().info(String.format("%s transferred %s bytes.",
-                            file.getName(), transfer.getProgress().getBytesTransferred()));
+                    getLog().info(String.format("Transferred %s bytes.",
+                            transfer.getProgress().getBytesTransferred()));
+
                     if (transfer.getState() != Transfer.TransferState.Completed) {
                         getLog().info(String.format("File %s File transfer failed.",
                                 file.getName()));

@@ -12,6 +12,7 @@ public class ProgressBar {
         final String empty_bar = "                                        ";
         final String filled_bar = "########################################";
         int amt_full = (int) (bar_size * (pct / 100.0));
+
         System.out.format("  [%s%s]", filled_bar.substring(0, amt_full),
                 empty_bar.substring(0, bar_size - amt_full) + Math.round(pct) + "%");
     }
