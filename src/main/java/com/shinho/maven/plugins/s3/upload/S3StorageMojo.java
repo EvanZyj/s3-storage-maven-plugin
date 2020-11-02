@@ -3,8 +3,6 @@ package com.shinho.maven.plugins.s3.upload;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.*;
-import com.amazonaws.event.ProgressEvent;
-import com.amazonaws.event.ProgressListenerChain;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
@@ -114,7 +112,8 @@ public class S3StorageMojo extends AbstractMojo {
 
                     transfer = mgr.upload(new PutObjectRequest(bucketName, keyName, file)
                             .withCannedAcl(CannedAccessControlList.BucketOwnerFullControl));
-                    getLog().info(String.format("Transferring %s.", file.getName()));
+
+                    getLog().info(String.format("Transferring file: %s", file.getName()));
                     ProgressBar.printProgressBar(0.0);
                     do {
                         try {

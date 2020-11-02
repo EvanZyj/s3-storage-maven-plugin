@@ -3,7 +3,7 @@
 
   <groupId>com.github.evanzyj</groupId>
   <artifactId>s3-storage-maven-plugin</artifactId>
-  <version>1.0.4</version>
+  <version>1.0.5</version>
   <packaging>maven-plugin</packaging>
 
   <name>S3 storage maven plugin</name>
@@ -97,12 +97,6 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
-      <version>1.11.836</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-sts</artifactId>
       <version>1.11.836</version>
     </dependency>
   </dependencies>

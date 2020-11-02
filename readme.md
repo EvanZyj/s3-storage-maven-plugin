@@ -1,16 +1,20 @@
 s3-storage-maven-plugin
 ======================
-用于上传文件到S3的maven插件
+Maven plug-in for uploading files to S3.Support any wildcard path,such as `*,**,?`
 
-配置说明
-------------------------
+用于上传文件到S3的maven插件,支持任何通配符路径.
+```shell script
+/opt/*/*.jar
+/opt/**.jar
+```
+
 plugin configuration
-----------------------
+----------------------------
 ```xml
     <plugin>
         <groupId>com.github.evanzyj</groupId>
         <artifactId>s3-storage-maven-plugin</artifactId>
-        <version>1.0.3</version>
+        <version>1.0.5</version>
         <executions>
             <execution>
                 <phase>package</phase>
@@ -18,7 +22,6 @@ plugin configuration
                     <goal>s3-storage</goal>
                 </goals>
                 <configuration>
-                    <!-- 是否启用文件上传操作 -->
                     <enable>true</enable> 
                     <accessKey>AWS accessKey</accessKey>
                     <secretKey>AWS secretKey</secretKey>
@@ -32,12 +35,14 @@ plugin configuration
     </plugin>
 ```
 
-plugin repository 使用jitpack.io提供的服务
-------------------------------------
+plugin repository.Use the service provided by jitpack.io.
+----------------------------
 ```xml
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </pluginRepository>
+    </pluginRepositories>
 ```
 

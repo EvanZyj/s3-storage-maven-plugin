@@ -5,6 +5,9 @@ public class ProgressBar {
     private ProgressBar(){
     }
 
+    /**
+     * Show progress by percentage。
+     */
     public static void printProgressBar(double pct) {
         // if bar_size changes, then change erase_bar (in eraseProgressBar) to
         // match.
