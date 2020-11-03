@@ -135,7 +135,7 @@ public class S3StorageMojo extends AbstractMojo {
                             transfer.getProgress().getBytesTransferred()));
 
                     if (transfer.getState() != Transfer.TransferState.Completed) {
-                        getLog().info(String.format("File %s File transfer failed.",
+                        getLog().info(String.format("File %s transfer failed.",
                                 file.getName()));
                         return false;
                     }
