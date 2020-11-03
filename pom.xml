@@ -7,12 +7,37 @@
   <packaging>maven-plugin</packaging>
 
   <name>S3 storage maven plugin</name>
+  <description>
+    Maven plug-in for uploading files to S3.Support any wildcard path.
+  </description>
 
   <properties>
     <maven.compiler.source>1.6</maven.compiler.source>
     <maven.compiler.target>1.6</maven.compiler.target>
     <encoding>UTF-8</encoding>
   </properties>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>evan zhao</name>
+      <email>evan_zyj@icloud.com</email>
+    </developer>
+  </developers>
+
+  <scm>
+    <tag>master</tag>
+    <url>git@github.com:evanzyj/s3-storage-maven-plugin.git</url>
+    <connection>git@github.com:evanzyj/s3-storage-maven-plugin.git</connection>
+    <developerConnection>git@github.com:evanzyj/s3-storage-maven-plugin.git</developerConnection>
+  </scm>
 
   <distributionManagement>
     <snapshotRepository>
@@ -71,6 +96,32 @@
         </executions>
       </plugin>
 
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>1.6</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>package</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.6.8</version>
+        <extensions>true</extensions>
+        <configuration>
+          <serverId>ossrh</serverId>
+          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <autoReleaseAfterClose>false</autoReleaseAfterClose>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
