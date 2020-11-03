@@ -8,7 +8,7 @@ Maven plug-in for uploading files to S3.Support any wildcard path,such as `*,**,
 /opt/**.jar
 ```
 
-plugin configuration
+Plugin configuration
 ----------------------------
 ```xml
     <plugin>
@@ -35,8 +35,10 @@ plugin configuration
     </plugin>
 ```
 
-plugin repository.Use the service provided by jitpack.io.
+Plugin repository.
 ----------------------------
+**Before version 1.0.4, you need to use the following configuration.**
+Use the service provided by jitpack.io.
 ```xml
     <pluginRepositories>
         <pluginRepository>
@@ -45,4 +47,3 @@ plugin repository.Use the service provided by jitpack.io.
         </pluginRepository>
     </pluginRepositories>
 ```
-
