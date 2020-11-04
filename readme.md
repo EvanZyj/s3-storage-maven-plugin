@@ -14,7 +14,7 @@ Plugin configuration
     <plugin>
         <groupId>com.github.evanzyj</groupId>
         <artifactId>s3-storage-maven-plugin</artifactId>
-        <version>1.0.5</version>
+        <version>1.0.6</version>
         <executions>
             <execution>
                 <phase>package</phase>
@@ -22,7 +22,7 @@ Plugin configuration
                     <goal>s3-storage</goal>
                 </goals>
                 <configuration>
-                    <enable>true</enable> 
+                    <skip>false</skip> 
                     <accessKey>AWS accessKey</accessKey>
                     <secretKey>AWS secretKey</secretKey>
                     <region>cn-north-1</region>
@@ -33,17 +33,4 @@ Plugin configuration
             </execution>
         </executions>
     </plugin>
-```
-
-Plugin repository.
-----------------------------
-**Before version 1.0.4, you need to use the following configuration.**
-Use the service provided by jitpack.io.
-```xml
-    <pluginRepositories>
-        <pluginRepository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </pluginRepository>
-    </pluginRepositories>
 ```

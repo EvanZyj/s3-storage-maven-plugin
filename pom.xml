@@ -3,10 +3,11 @@
 
   <groupId>com.github.evanzyj</groupId>
   <artifactId>s3-storage-maven-plugin</artifactId>
-  <version>1.0.5</version>
+  <version>1.0.6</version>
   <packaging>maven-plugin</packaging>
 
   <name>S3 storage maven plugin</name>
+  <url>https://github.com/evanzyj/s3-storage-maven-plugin</url>
   <description>
     Maven plug-in for uploading files to S3.Support any wildcard path.
   </description>
@@ -110,18 +111,19 @@
           </execution>
         </executions>
       </plugin>
-
+      <!--
       <plugin>
         <groupId>org.sonatype.plugins</groupId>
         <artifactId>nexus-staging-maven-plugin</artifactId>
         <version>1.6.8</version>
         <extensions>true</extensions>
         <configuration>
-          <serverId>ossrh</serverId>
+          <serverId>oss</serverId>
           <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-          <autoReleaseAfterClose>false</autoReleaseAfterClose>
+          <autoReleaseAfterClose>true</autoReleaseAfterClose>
         </configuration>
       </plugin>
+      -->
     </plugins>
   </build>
 

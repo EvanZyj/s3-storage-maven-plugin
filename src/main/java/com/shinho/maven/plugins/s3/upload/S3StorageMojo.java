@@ -18,10 +18,12 @@ import java.util.List;
 
 @Mojo(name = "s3-storage")
 public class S3StorageMojo extends AbstractMojo {
-    /**
-     * enable是否允许上传下载操作.
-     */
+
+    @Parameter(property = "s3-storage.skip", defaultValue = "false")
+    private boolean skip;
+
     @Parameter(property = "s3-storage.enable", defaultValue = "false")
+    @Deprecated
     private boolean enable;
 
     @Parameter(property = "s3-storage.accessKey")
@@ -60,12 +62,12 @@ public class S3StorageMojo extends AbstractMojo {
     @Override
     public void execute() throws MojoExecutionException {
 
-        if (!enable) {
-            getLog().info("s3-storage is disabled.");
+        if (skip) {
+            getLog().info("The goal s3-storage is skipped.");
             return;
         }
-        AmazonS3 s3 = getS3Client(accessKey, secretKey, region);
 
+        AmazonS3 s3 = getS3Client(accessKey, secretKey, region);
         if (endpoint != null) {
             s3.setEndpoint(endpoint);
         }
